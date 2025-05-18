@@ -49,16 +49,21 @@ def update_beatmaps() -> None:
         cursor.execute("INSERT INTO setretrieveinfo (LastRetrieval, LastDate) VALUES (%s, %s)", 
                       (current_time, current_time.date()))
     cnx.commit()
+
+    sql_beatmapsets = """
+        REPLACE INTO beatmapsets (
+            SetID, CreatorID, Status, Timestamp,
+            Genre, Lang, Artist, Title, DateRanked,
+            HasStoryboard, HasVideo
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
     
     sql_beatmaps = """
         REPLACE INTO beatmaps (
-            BeatmapID, SetID, CreatorID, SetCreatorID, 
-            DifficultyName, Mode, Status, SR, 
-            Artist, Title, DateRanked, Timestamp
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            BeatmapID, SetID, DifficultyName, Mode, 
+            Status, SR, Timestamp
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    
-    print(f"Fetching beatmaps ranked after {latest_date}")
     
     while True:
         beatmapsets = api.search_beatmapsets(
@@ -80,60 +85,79 @@ def update_beatmaps() -> None:
 
             try:
                 cursor.execute(
-                    "INSERT IGNORE INTO mappernames (UserID, Username) VALUES (%s, %s)",
-                    (beatmapset.user_id, beatmapset.creator)
+                    "INSERT IGNORE INTO mappernames (UserID, Username, Country) VALUES (%s, %s, %s)",
+                    (beatmapset.user_id, beatmapset.creator, beatmapset.creator_country_code if hasattr(beatmapset, 'creator_country_code') else None)
                 )
                 cnx.commit()
+                
+                beatmapset_values = (
+                    beatmapset.id,
+                    beatmapset.user_id,
+                    beatmapset.status.value if hasattr(beatmapset, 'status') else 1,
+                    datetime.datetime.now(),
+                    beatmapset.genre_id if hasattr(beatmapset, 'genre_id') else None,
+                    beatmapset.language_id if hasattr(beatmapset, 'language_id') else None,
+                    beatmapset.artist,
+                    beatmapset.title,
+                    display_date,
+                    1 if getattr(beatmapset, 'has_storyboard', False) else 0,
+                    1 if getattr(beatmapset, 'has_video', False) else 0
+                )
+                
+                try:
+                    cursor.execute(sql_beatmapsets, beatmapset_values)
+                    cnx.commit()
+                except Exception as e:
+                    print(f"Error inserting beatmapset {beatmapset.id}: {e}")
                 
                 for beatmap in beatmapset.beatmaps:
                     cursor.execute("SELECT * FROM blacklist WHERE UserID = %s;", (beatmap.user_id,))
                     result = cursor.fetchone()
                     
-                    if result:
-                        blacklisted = 1
-                        blacklist_reason = "Mapper has requested blacklist."
-                    else:
-                        blacklisted = 0
-                        blacklist_reason = None
+                    blacklisted = 1 if result else 0
+                    blacklist_reason = "Mapper has requested blacklist." if result else None
 
                     beatmap_values = (
                         beatmap.id,
                         beatmapset.id,
-                        beatmap.user_id,
-                        beatmapset.user_id,
                         beatmap.version,
                         beatmap.mode_int,
                         beatmap.status.value,
                         beatmap.difficulty_rating,
-                        beatmapset.artist,
-                        beatmapset.title,
-                        display_date,
                         datetime.datetime.now()
                     )
                     
                     try:
                         cursor.execute(sql_beatmaps, beatmap_values)
                         cnx.commit()
-                        print(f"Inserted beatmap {beatmap.id}")
-                        
+            
                         if blacklisted:
                             cursor.execute(
                                 "UPDATE beatmaps SET Blacklisted = %s, BlacklistReason = %s WHERE BeatmapID = %s",
                                 (blacklisted, blacklist_reason, beatmap.id)
                             )
                             cnx.commit()
-                        
+
+                        cursor.execute("""
+                            INSERT IGNORE INTO beatmap_creators (BeatmapID, CreatorID)
+                            VALUES (%s, %s)
+                        """, (beatmap.id, beatmap.user_id))
+                        cnx.commit()
+
+                        cursor.execute("""
+                            REPLACE INTO recent_maps (SetID, Mode, Timestamp, LastUpdated)
+                            VALUES (%s, %s, %s, NOW())
+                        """, (beatmapset.id, beatmap.mode_int, datetime.datetime.now()))
+                        cnx.commit()
                     except Exception as e:
                         print(f"Error inserting beatmap {beatmap.id}: {e}")
-
-                latest_date = display_date
-                        
+                
+                latest_date = display_date   
             except Exception as e:
                 print(f"Error processing beatmapset {beatmapset.id}: {e}")
 
     cursor.close()
     cnx.close()
-    print("Beatmap update completed")
 
 def update_ratings() -> None:
     try:
@@ -143,16 +167,73 @@ def update_ratings() -> None:
         print(f"Database connection error: {err}")
         return
     
-    print("Updating rating calculations...")
+    confidence = 20
+    m = 3.0
 
-    cursor.execute("""
-        UPDATE beatmaps b
-        SET RatingCount = (SELECT COUNT(*) FROM ratings r WHERE r.BeatmapID = b.BeatmapID),
-            WeightedAvg = (SELECT AVG(r.Score) FROM ratings r WHERE r.BeatmapID = b.BeatmapID)
-        WHERE EXISTS (SELECT 1 FROM ratings r WHERE r.BeatmapID = b.BeatmapID)
-    """)
-    cnx.commit()
-    
+    cursor.execute("SELECT DISTINCT BeatmapID FROM ratings")
+    beatmap_ids = cursor.fetchall()
+
+    for index, beatmap_id_row in enumerate(beatmap_ids):
+        beatmap_id = beatmap_id_row[0]
+        
+        cursor.execute("SELECT Mode FROM beatmaps WHERE BeatmapID = %s", (beatmap_id,))
+        mode_result = cursor.fetchone()
+        if not mode_result:
+            continue
+        mode = mode_result[0]
+
+        cursor.execute("""
+            SELECT 
+                SUM(r.Score * u.Weight) / SUM(u.Weight) AS weighted_avg, 
+                SUM(u.Weight) AS weight_sum, 
+                COUNT(*) AS rating_count 
+            FROM ratings r 
+            INNER JOIN users u ON r.UserID = u.UserID 
+            WHERE r.BeatmapID = %s
+        """, (beatmap_id,))
+        
+        result = cursor.fetchone()
+        avg = result[0]
+        weighted_count = result[1]
+        count = result[2]
+
+        if weighted_count is None or weighted_count < 1.5:
+            bayesian = None
+        else:
+            bayesian = ((weighted_count * avg) + (m * confidence)) / (weighted_count + confidence)
+            if weighted_count < 20 and mode == 0:
+                interp_factor = pow((max(1, min(weighted_count, 20)) - 1) / 19.0, 3)
+                bayesian = 2.9 + interp_factor * (bayesian - 2.9)
+
+        cursor.execute("""
+            UPDATE beatmaps 
+            SET WeightedAvg = %s, RatingCount = %s 
+            WHERE BeatmapID = %s
+        """, (avg, count, beatmap_id))
+        cnx.commit()
+
+        if count >= 5 and bayesian is not None:
+            cursor.execute("SELECT SetID FROM beatmaps WHERE BeatmapID = %s", (beatmap_id,))
+            set_id_result = cursor.fetchone()
+            if set_id_result:
+                set_id = set_id_result[0]
+                
+                cursor.execute("""
+                    REPLACE INTO top_maps (BeatmapID, SetID, Mode, WeightedAvg, RatingCount, LastUpdated)
+                    VALUES (%s, %s, %s, %s, %s, NOW())
+                """, (beatmap_id, set_id, mode, bayesian, count))
+                cnx.commit()
+
+                cursor.execute("SELECT YEAR(DateRanked) FROM beatmapsets WHERE SetID = %s", (set_id,))
+                year_result = cursor.fetchone()
+                if year_result and year_result[0]:
+                    year = year_result[0]
+                    cursor.execute("""
+                        REPLACE INTO top_maps_yearly (BeatmapID, SetID, Mode, Year, WeightedAvg, RatingCount, LastUpdated)
+                        VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                    """, (beatmap_id, set_id, mode, year, bayesian, count))
+                    cnx.commit()
+
     cursor.execute("""
         UPDATE beatmaps
         SET Rating = CASE
@@ -168,27 +249,67 @@ def update_ratings() -> None:
     cnx.commit()
     
     cursor.execute("""
-        SET @rank = 0;
-        UPDATE beatmaps
-        SET ChartRank = (@rank := @rank + 1)
-        WHERE RatingCount >= 5
-        ORDER BY WeightedAvg DESC, RatingCount DESC
+        SET @rank := 0;
+        UPDATE beatmaps b
+        JOIN (
+            SELECT BeatmapID, (@rank := @rank + 1) as new_rank
+            FROM beatmaps
+            WHERE RatingCount >= 5
+            ORDER BY WeightedAvg DESC, RatingCount DESC
+        ) r ON b.BeatmapID = r.BeatmapID
+        SET b.ChartRank = r.new_rank
     """)
     cnx.commit()
     
     current_year = datetime.datetime.now().year
     cursor.execute("""
-        SET @rank = 0;
-        UPDATE beatmaps
-        SET ChartYearRank = (@rank := @rank + 1)
-        WHERE RatingCount >= 5 AND YEAR(DateRanked) = %s
-        ORDER BY WeightedAvg DESC, RatingCount DESC
-    """, (current_year,))
+        SET @year_rank := 0;
+        UPDATE beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        JOIN (
+            SELECT b.BeatmapID, (@year_rank := @year_rank + 1) as new_rank
+            FROM beatmaps b
+            JOIN beatmapsets bs ON b.SetID = bs.SetID
+            WHERE b.RatingCount >= 5 AND YEAR(bs.DateRanked) = %s
+            ORDER BY b.WeightedAvg DESC, b.RatingCount DESC
+        ) r ON b.BeatmapID = r.BeatmapID
+        SET b.ChartYearRank = r.new_rank
+        WHERE YEAR(bs.DateRanked) = %s
+    """, (current_year, current_year))
     cnx.commit()
     
+    update_home_caches(cursor, cnx)
     cursor.close()
     cnx.close()
-    print("Rating calculations completed")
+
+def update_home_caches(cursor, cnx):
+    cursor.execute("TRUNCATE TABLE cache_home_best_map")
+    
+    for mode in range(4):  # 0=osu, 1=taiko, 2=fruits, 3=mania
+        cursor.execute("""
+            INSERT INTO cache_home_best_map (BeatmapID, Mode)
+            SELECT BeatmapID, Mode
+            FROM top_maps 
+            WHERE Mode = %s
+            ORDER BY WeightedAvg DESC, RatingCount DESC
+            LIMIT 1
+        """, (mode,))
+    cnx.commit()
+    
+    cursor.execute("TRUNCATE TABLE cache_home_recent_maps")
+    
+    for mode in range(4):
+        cursor.execute("""
+            INSERT INTO cache_home_recent_maps (SetID, Timestamp, Metadata, CreatorID, Mode)
+            SELECT bs.SetID, rm.Timestamp, CONCAT(bs.Artist, ' - ', bs.Title) as Metadata, 
+                   bs.CreatorID, rm.Mode
+            FROM recent_maps rm
+            JOIN beatmapsets bs ON rm.SetID = bs.SetID
+            WHERE rm.Mode = %s
+            ORDER BY rm.Timestamp DESC
+            LIMIT 5
+        """, (mode,))
+    cnx.commit()
 
 if __name__ == "__main__":
     update_beatmaps()

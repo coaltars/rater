@@ -9,7 +9,6 @@ beatmaps_bp = Blueprint('beatmaps', __name__)
 
 @beatmaps_bp.route('/beatmapset/<int:set_id>')
 def beatmapset(set_id):
-    # First get the beatmapset information
     query = """
         SELECT * FROM beatmapsets 
         WHERE SetID = %s
@@ -18,8 +17,7 @@ def beatmapset(set_id):
     
     if not beatmapset:
         return render_template('error.html', message="Beatmapset not found")
-    
-    # Now get all beatmaps for this set
+        
     query = """
         SELECT * FROM beatmaps 
         WHERE SetID = %s 
