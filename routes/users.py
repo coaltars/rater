@@ -47,7 +47,7 @@ def user_profile(user_id):
         '5.0': user_info.get('Custom50Rating', '')
     }
     
-    user_avatar = "https://a.ppy.sh/" + str(user_data.UserID)
+    user_avatar = "https://a.ppy.sh/" + str(user_info.UserID)
     return render_template('user.html', 
                           user_info=user_info,
                           avatar=user_avatar,
