@@ -3,7 +3,7 @@
   <p align="center">
     <code>git clone https://github.com/x2corp/rater.git</code><br>
     <code>cd rater && cp ext/.env.example .env && nano .env</code><br>
-    <code>mysql -u user -p rater < db/schema.sql</code><br>
+    <code>mysql -u user -p rater < ext/schema.sql</code><br>
     <code>pip install -r ext/requirements.txt</code><br>
     <code>python app.py</code><br>
   </p>
