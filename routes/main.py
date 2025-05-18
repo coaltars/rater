@@ -9,17 +9,17 @@ def index():
     recent_maps = {}
     for mode in range(4):
         query = """
-            SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, 
-                   bs.CreatorID, b.Timestamp
+            SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID, MAX(b.Timestamp) as Timestamp
             FROM beatmaps b
             JOIN beatmapsets bs ON b.SetID = bs.SetID
             WHERE b.Mode = %s AND b.Status > 0
-            ORDER BY b.Timestamp DESC
+            GROUP BY bs.SetID, bs.Artist, bs.Title, bs.CreatorID
+            ORDER BY MAX(b.Timestamp) DESC
             LIMIT 8
         """
         mode_maps = execute_query(query, (mode,), fetch_all=True) or []
         for map_data in mode_maps:
-            map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']} [{map_data['DifficultyName']}]"
+            map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']}"
            
         recent_maps[mode] = mode_maps
    
