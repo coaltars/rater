@@ -47,6 +47,7 @@ def user_profile(user_id):
         '5.0': user_info.get('Custom50Rating', '')
     }
     
+    print(user_info)
     return render_template('user.html', 
                           user_info=user_info,
                           ratings=ratings,

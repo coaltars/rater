@@ -278,7 +278,7 @@ def get_beatmaps_by_mapper(user_id: int) -> List[Dict]:
         FROM beatmaps b
         JOIN beatmapsets bs ON b.SetID = bs.SetID
         WHERE bs.CreatorID = %s
-        ORDER BY b.DateRanked DESC
+        ORDER BY bs.DateRanked DESC
     """
     return execute_query(query, (user_id,), fetch_all=True) or []
 

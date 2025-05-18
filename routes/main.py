@@ -78,7 +78,7 @@ def search():
                (SELECT AVG(r.Score) FROM ratings r
                 JOIN beatmaps bm ON r.BeatmapID = bm.BeatmapID
                 WHERE bm.SetID = bs.SetID) as AvgRating,
-               MAX(b.DateRanked) as DateRanked
+               MAX(bs.DateRanked) as DateRanked
         FROM beatmaps b
         JOIN beatmapsets bs ON b.SetID = bs.SetID
         WHERE MATCH(b.DifficultyName) AGAINST (%s IN BOOLEAN MODE)

@@ -34,7 +34,7 @@ def update_beatmaps() -> None:
     
     api = Ossapi(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 
-    cursor.execute("SELECT MAX(DateRanked) FROM beatmaps;")
+    cursor.execute("SELECT MAX(DateRanked) FROM beatmapsets;")
     result = cursor.fetchone()
     latest_date = result[0] if result and result[0] else datetime.datetime(2007, 1, 1)
     
