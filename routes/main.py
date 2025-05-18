@@ -24,17 +24,15 @@ def index():
         recent_maps[mode] = mode_maps
    
     query = """
-        SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID,
-               COUNT(r.Score) as RatingCount,
-               AVG(r.Score) as AvgRating,
-               (SUM(r.Score) / COUNT(r.Score)) * (COUNT(r.Score) / (COUNT(r.Score) + 10)) +
-               (3.0 * (10 / (COUNT(r.Score) + 10))) as WeightedAvg
+        SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID, 
+        COUNT(r.Score) as RatingCount, AVG(r.Score) as AvgRating,
+        (SUM(r.Score) + 3.0 * 10) / (COUNT(r.Score) + 10) as BayesianAvg
         FROM ratings r
         JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
         JOIN beatmapsets bs ON b.SetID = bs.SetID
         GROUP BY b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID
         HAVING RatingCount >= 5
-        ORDER BY WeightedAvg DESC
+        ORDER BY BayesianAvg DESC
         LIMIT 10
     """
     top_maps = execute_query(query, fetch_all=True) or []
