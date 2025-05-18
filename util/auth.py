@@ -41,13 +41,12 @@ def get_user_info(access_token: str) -> Optional[Dict[str, Any]]:
 
 def save_user_to_db(user_data: Dict[str, Any]) -> bool:
     query = """
-        REPLACE INTO users (UserID, Username, AvatarURL, LastLogin) 
-        VALUES (%s, %s, %s, %s)
+        REPLACE INTO users (UserID, Username, LastAccessedSite) 
+        VALUES (%s, %s, %s)
     """
     params = (
         user_data['id'], 
-        user_data['username'], 
-        user_data['avatar_url'], 
+        user_data['username'],
         datetime.now()
     )
     
