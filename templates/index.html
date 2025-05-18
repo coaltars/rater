@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}rater | Home{% endblock %}
+
+{% block content %}
+<div class="tabs">
+    <div class="tab active" data-mode="0">osu!</div>
+    <div class="tab" data-mode="1">Taiko</div>
+    <div class="tab" data-mode="2">Catch</div>
+    <div class="tab" data-mode="3">Mania</div>
+</div>
+
+<div class="tab-content active" data-mode="0">
+    <div class="grid">
+        {% for map in recent_maps[0] %}
+            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+                <div class="card-thumb">
+                    <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
+                </div>
+                <div class="card-title">{{ map.Metadata }}</div>
+                <div class="card-meta">
+                    <span class="mode-badge mode-0">osu!</span>
+                    {{ map.Timestamp.strftime('%Y-%m-%d') }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="tab-content" data-mode="1" style="display: none;">
+    <div class="grid">
+        {% for map in recent_maps[1] %}
+            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+                <div class="card-thumb">
+                    <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
+                </div>
+                <div class="card-title">{{ map.Metadata }}</div>
+                <div class="card-meta">
+                    <span class="mode-badge mode-1">Taiko</span>
+                    {{ map.Timestamp.strftime('%Y-%m-%d') }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="tab-content" data-mode="2" style="display: none;">
+    <div class="grid">
+        {% for map in recent_maps[2] %}
+            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+                <div class="card-thumb">
+                    <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
+                </div>
+                <div class="card-title">{{ map.Metadata }}</div>
+                <div class="card-meta">
+                    <span class="mode-badge mode-2">Catch</span>
+                    {{ map.Timestamp.strftime('%Y-%m-%d') }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="tab-content" data-mode="3" style="display: none;">
+    <div class="grid">
+        {% for map in recent_maps[3] %}
+            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+                <div class="card-thumb">
+                    <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
+                </div>
+                <div class="card-title">{{ map.Metadata }}</div>
+                <div class="card-meta">
+                    <span class="mode-badge mode-3">Mania</span>
+                    {{ map.Timestamp.strftime('%Y-%m-%d') }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Beatmap</th>
+            <th>Rating</th>
+            <th>Reviews</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for map in top_maps %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                    <a href="{{ url_for('beatmapset', set_id=map.SetID) }}">
+                        {{ map.Artist }} - {{ map.Title }}
+                    </a>
+                </td>
+                <td>
+                    <div class="stars">
+                        {% for i in range(1, 6) %}
+                            {% if i <= map.AvgRating|int %}
+                                <span class="star full">★</span>
+                            {% elif i - 0.5 <= map.AvgRating %}
+                                <span class="star half">★</span>
+                            {% else %}
+                                <span class="star">★</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {{ "%.2f"|format(map.AvgRating) }}
+                </td>
+                <td>{{ map.RatingCount }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="comments">
+    {% for i in range(5) %}
+        <div class="comment">
+            <div class="comment-user">
+                <img src="/api/placeholder/32/32" alt="User">
+                <div class="comment-user-name">User{{ i+1 }}</div>
+            </div>
+            <div class="comment-content">
+                <div class="comment-map">on <a href="#">Some Beatmap {{ i+1 }}</a></div>
+                <div class="comment-text">This is an example comment {{ i+1 }}</div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .comments {
+        margin-top: 1rem;
+    }
+    
+    .comment {
+        display: flex;
+        padding: 0.4rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .comment-user {
+        margin-right: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .comment-user img {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-bottom: 0.1rem;
+    }
+    
+    .comment-user-name {
+        font-size: 0.65rem;
+        color: #aaa;
+        text-align: center;
+    }
+    
+    .comment-content {
+        flex-grow: 1;
+        font-size: 0.8rem;
+    }
+    
+    .comment-map {
+        font-size: 0.7rem;
+        color: #777;
+        margin-bottom: 0.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const mode = this.getAttribute('data-mode');
+
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                tabContents.forEach(content => {
+                    if (content.getAttribute('data-mode') === mode) {
+                        content.style.display = 'block';
+                    } else {
+                        content.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

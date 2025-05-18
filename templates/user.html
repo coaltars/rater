@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}rater | User Profile - {{ user_info.Username }}{% endblock %}
+
+{% block content %}
+<div class="user-profile">
+    <div class="user-avatar">
+        <img src="{{ user_info.AvatarURL }}" alt="{{ user_info.Username }}">
+    </div>
+    
+    <div class="user-details">
+        <h1>{{ user_info.Username }}</h1>
+        
+        <div class="user-stats">
+            <div class="user-stats-item">
+                <span class="user-stats-label">since:</span>
+                <span>{{ user_info.RegisterDate.strftime('%Y-%m-%d') }}</span>
+            </div>
+            
+            <div class="user-stats-item">
+                <span class="user-stats-label">total ratings:</span>
+                <span>{{ stats.total }}</span>
+            </div>
+            
+            <div class="user-stats-item">
+                <span class="user-stats-label">avg rating:</span>
+                <span>{{ "%.2f"|format(stats.average or 0) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Beatmap</th>
+            <th>Difficulty</th>
+            <th>Mode</th>
+            <th>Rating</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rating in ratings %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('beatmapset', set_id=rating.SetID) }}">
+                        {{ rating.Artist }} - {{ rating.Title }}
+                    </a>
+                </td>
+                <td>{{ rating.DifficultyName }}</td>
+                <td>
+                    <span class="mode-badge mode-{{ rating.Mode }}">
+                        {{ mode_names[rating.Mode] }}
+                    </span>
+                </td>
+                <td>
+                    <div class="stars">
+                        {% for i in range(1, 6) %}
+                            {% if i <= rating.Rating|int %}
+                                <span class="star full">★</span>
+                            {% elif i - 0.5 <= rating.Rating %}
+                                <span class="star half">★</span>
+                            {% else %}
+                                <span class="star">★</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {{ rating.Rating }}
+                </td>
+                <td>{{ rating.Timestamp.strftime('%Y-%m-%d') }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if not ratings %}
+    <div class="no-results">{{ user_info.Username }} hasn't rated any beatmaps yet.</div>
+{% endif %}
+{% endblock %}

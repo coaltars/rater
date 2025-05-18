@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}rater | {{ beatmapset.Artist }} - {{ beatmapset.Title }}{% endblock %}
+
+{% block content %}
+<div class="beatmap-info">
+    <div class="beatmap-cover">
+        <img src="https://assets.ppy.sh/beatmaps/{{ beatmapset.SetID }}/covers/cover.jpg" alt="{{ beatmapset.Artist }} - {{ beatmapset.Title }}">
+    </div>
+    
+    <div class="beatmap-details">
+        <h1>{{ beatmapset.Artist }} - {{ beatmapset.Title }}</h1>
+        <div class="beatmap-creator">
+            mapped by 
+            {% if creator %}
+                <a href="{{ url_for('user_profile', user_id=creator.UserID) }}">{{ creator.Username }}</a>
+            {% else %}
+                <a href="https://osu.ppy.sh/users/{{ beatmapset.CreatorID }}">ID: {{ beatmapset.CreatorID }}</a>
+            {% endif %}
+        </div>
+        
+        <div class="beatmap-metadata">
+            <div class="beatmap-metadata-item">
+                <div class="beatmap-metadata-label">Ranked</div>
+                <div>{{ beatmapset.DateRanked.strftime('%Y-%m-%d') }}</div>
+            </div>
+            
+            <div class="beatmap-metadata-item">
+                <div class="beatmap-metadata-label">Status</div>
+                <div>{{ "Ranked" if beatmapset.Status == 1 else ("Loved" if beatmapset.Status == 4 else "Unknown") }}</div>
+            </div>
+            
+            <div class="beatmap-metadata-item">
+                <div class="beatmap-metadata-label">SB</div>
+                <div>{{ "Yes" if beatmapset.HasStoryboard else "No" }}</div>
+            </div>
+            
+            <div class="beatmap-metadata-item">
+                <div class="beatmap-metadata-label">Video</div>
+                <div>{{ "Yes" if beatmapset.HasVideo else "No" }}</div>
+            </div>
+        </div>
+        
+        <div class="beatmap-links">
+            <a href="https://osu.ppy.sh/beatmapsets/{{ beatmapset.SetID }}" target="_blank">osu! website</a>
+        </div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Difficulty</th>
+            <th>Mode</th>
+            <th>Stars</th>
+            <th>Community Rating</th>
+            <th>Your Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for beatmap in beatmaps %}
+            <tr>
+                <td>{{ beatmap.DifficultyName }}</td>
+                <td>
+                    <span class="mode-badge mode-{{ beatmap.Mode }}">
+                        {{ mode_names[beatmap.Mode] }}
+                    </span>
+                </td>
+                <td>{{ "%.2f"|format(beatmap.SR) }}★</td>
+                <td>
+                    {% if beatmap.BeatmapID in avg_ratings %}
+                        <div class="stars">
+                            {% for i in range(1, 6) %}
+                                {% if i <= avg_ratings[beatmap.BeatmapID].avg|int %}
+                                    <span class="star full">★</span>
+                                {% elif i - 0.5 <= avg_ratings[beatmap.BeatmapID].avg %}
+                                    <span class="star half">★</span>
+                                {% else %}
+                                    <span class="star">★</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {{ "%.2f"|format(avg_ratings[beatmap.BeatmapID].avg) }}
+                        <span class="rating-count">({{ avg_ratings[beatmap.BeatmapID].count }})</span>
+                    {% else %}
+                        <div class="stars">
+                            {% for i in range(1, 6) %}
+                                <span class="star">★</span>
+                            {% endfor %}
+                        </div>
+                        No ratings
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user %}
+                        <div class="rating" data-beatmap-id="{{ beatmap.BeatmapID }}">
+                            <div class="stars user-stars">
+                                {% for i in range(1, 11) %}
+                                    {% if beatmap.BeatmapID in user_ratings and i <= user_ratings[beatmap.BeatmapID] * 2 %}
+                                        <span class="star half" data-value="{{ i * 0.5 }}">½</span>
+                                    {% else %}
+                                        <span class="star" data-value="{{ i * 0.5 }}">½</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="user-rating-value">
+                                {% if beatmap.BeatmapID in user_ratings %}
+                                    {{ user_ratings[beatmap.BeatmapID] }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login to rate</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ratingElements = document.querySelectorAll('.rating');
+        
+        ratingElements.forEach(rating => {
+            const beatmapId = rating.getAttribute('data-beatmap-id');
+            const stars = rating.querySelectorAll('.user-stars .star');
+            const valueSpan = rating.querySelector('.user-rating-value');
+            
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const value = parseFloat(this.getAttribute('data-value'));
+
+                    stars.forEach(s => {
+                        const starValue = parseFloat(s.getAttribute('data-value'));
+                        if (starValue <= value) {
+                            s.classList.add('full');
+                        } else {
+                            s.classList.remove('full');
+                        }
+                    });
+                });
+                
+                star.addEventListener('mouseout', function() {
+                    stars.forEach(s => {
+                        s.classList.remove('full');
+
+                        const currentValue = parseFloat(valueSpan.textContent || '0');
+                        const starValue = parseFloat(s.getAttribute('data-value'));
+                        
+                        if (currentValue && starValue <= currentValue) {
+                            s.classList.add('full');
+                        }
+                    });
+                });
+                
+                star.addEventListener('click', function() {
+                    const value = parseFloat(this.getAttribute('data-value'));
+                    
+                    fetch('/rate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `beatmap_id=${beatmapId}&rating=${value}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            valueSpan.textContent = value;
+
+                            stars.forEach(s => {
+                                const starValue = parseFloat(s.getAttribute('data-value'));
+                                if (starValue <= value) {
+                                    s.classList.add('full');
+                                } else {
+                                    s.classList.remove('full');
+                                }
+                            });
+    
+                            const avgRatingElement = rating.closest('tr').querySelector('td:nth-child(4)');
+                            if (avgRatingElement) {
+                                const starsElement = avgRatingElement.querySelector('.stars');
+                                const avgStars = starsElement.querySelectorAll('.star');
+                                
+                                avgStars.forEach((s, i) => {
+                                    s.className = 'star';
+                                    if (i + 1 <= Math.floor(data.new_avg)) {
+                                        s.classList.add('full');
+                                    } else if (i + 0.5 <= data.new_avg) {
+                                        s.classList.add('half');
+                                    }
+                                });
+                                
+                                const textNode = avgRatingElement.childNodes[avgRatingElement.childNodes.length - 2];
+                                textNode.nodeValue = ` ${data.new_avg.toFixed(2)} `;
+
+                                const countSpan = avgRatingElement.querySelector('.rating-count');
+                                countSpan.textContent = `(${data.count})`;
+                            }
+                        } else {
+                            console.error('Error saving rating:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

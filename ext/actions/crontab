@@ -1,0 +1,2 @@
+0 * * * * cd /home/elle/rate && python updater.py >> /var/log/cron.log 2>&1
+0 0 * * * truncate -s 0 /var/log/cron.log

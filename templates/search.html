@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}rater | Search{% endblock %}
+
+{% block content %}
+<form class="search" method="get" action="{{ url_for('main.search') }}">
+    <input type="text" name="q" placeholder="Search by artist or title..." value="{{ query or '' }}" required minlength="3">
+</form>
+
+{% if results %}
+    <table>
+        <thead>
+            <tr>
+                <th>Beatmapset</th>
+                <th>Status</th>
+                <th>Ranked</th>
+                <th>Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('beatmapset', set_id=result.SetID) }}">
+                            {{ result.Artist }} - {{ result.Title }}
+                        </a>
+                    </td>
+                    <td>{{ "Ranked" if result.Status == 1 else ("Loved" if result.Status == 4 else "Unknown") }}</td>
+                    <td>{{ result.DateRanked.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if result.AvgRating %}
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= result.AvgRating|int %}
+                                        <span class="star full">★</span>
+                                    {% elif i - 0.5 <= result.AvgRating %}
+                                        <span class="star half">★</span>
+                                    {% else %}
+                                        <span class="star">★</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {{ "%.2f"|format(result.AvgRating or 0) }}
+                            <span class="rating-count">({{ result.RatingCount or 0 }})</span>
+                        {% else %}
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                    <span class="star">★</span>
+                                {% endfor %}
+                            </div>
+                            No ratings
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% elif query %}
+    <div class="no-results">No results found for "{{ query }}".</div>
+{% endif %}
+{% endblock %}

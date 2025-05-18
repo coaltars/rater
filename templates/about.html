@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}rater | About{% endblock %}
+
+{% block content %}
+{% if stats %}
+    <div class="stats-grid">
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.beatmapsets }}</div>
+            <div class="stat-label">Sets</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.beatmaps }}</div>
+            <div class="stat-label">Beatmaps</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.users }}</div>
+            <div class="stat-label">Users</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.ratings }}</div>
+            <div class="stat-label">Ratings</div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style>
+    .about-content {
+        margin-bottom: 1rem;
+        line-height: 1.4;
+        font-size: 0.85rem;
+    }
+    
+    .about-content ul {
+        margin-left: 1.5rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 0.5rem;
+        margin: 0.8rem 0;
+    }
+    
+    .stat-item {
+        background-color: #151515;
+        padding: 0.5rem;
+        text-align: center;
+        border-radius: 2px;
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #4c657f;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        color: #aaa;
+        margin-top: 0.2rem;
+    }
+</style>
+{% endblock %}

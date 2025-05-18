@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}rater | Error{% endblock %}
+
+{% block content %}
+<div class="section error-container">
+    <h2 class="section-title">Error</h2>
+    
+    <div class="error-message">
+        <p>{{ message }}</p>
+        <a href="{{ url_for('index') }}">Return to homepage</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .error-container {
+        text-align: center;
+        margin: 4rem auto;
+    }
+    
+    .error-message {
+        padding: 2rem;
+        background-color: #151515;
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}

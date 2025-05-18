@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}rater{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <div id="checkerboard"></div>
+
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="{{ url_for('main.index') }}"><span class="rater">rater</span></a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('main.index') }}">home</a></li>
+                    <li><a href="{{ url_for('main.search') }}">search</a></li>
+                    <li><a href="{{ url_for('main.about') }}">info</a></li>
+                </ul>
+            </nav>
+            <div class="user-menu">
+                {% if user %}
+                    <img src="{{ user.avatar_url }}" alt="{{ user.username }}">
+                    <a href="{{ url_for('user_profile', user_id=user.id) }}">{{ user.username }}</a> |
+                    <a href="{{ url_for('auth.logout') }}">logout</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">login</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    
+    <main class="site-content">
+        <div class="content-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+           
+            <div class="wrapper">
+                {% block content %}{% endblock %}
+            </div>
+            
+            <footer>
+                <p>rater: osu! beatmap rating service </p>
+            </footer>
+        </div>
+    </main>
+   
+    {% block scripts %}{% endblock %}
+</body>
+</html>

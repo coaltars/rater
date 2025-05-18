@@ -1,0 +1,393 @@
+:root {
+    --main-bg-color: #000000;
+    --header-bg-color: #2F4F4F;
+    --content-bg-color: #101010;
+    --primary-color: #4c657f;
+    --secondary-color: #6fffea;
+    --text-color: #ffffff;
+    --link-color: #6fffea;
+    --link-hover-color: #99ddff;
+    --border-color: #333333;
+    --card-bg-color: #151515;
+    --alt-bg-color: #2F4F4F;
+    --alt-bg-color-2: #203838;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Verdana, sans-serif;
+    background-color: var(--main-bg-color);
+    color: var(--text-color);
+    line-height: 1.2;
+    font-size: 12px;
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.site-header {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    background-color: var(--header-bg-color);
+    width: 100%;
+    padding: 0 3%;
+    z-index: 999;
+    font-size: 0.75rem;
+    line-height: 2rem;
+    height: 2rem;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.logo {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.logo a {
+    color: var(--text-color);
+}
+
+.rater {
+    color: var(--secondary-color);
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    height: 100%;
+}
+
+nav ul li {
+    height: 100%;
+    margin: 0;
+}
+
+nav ul li a {
+    height: 100%;
+    min-width: 2.5rem;
+    background-color: var(--alt-bg-color-2);
+    display: inline-block;
+    text-align: center;
+    padding: 0 0.5rem;
+    color: white;
+    line-height: 2rem;
+}
+
+nav ul li a:hover {
+    background-color: #0C1515;
+    text-decoration: none;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.user-menu img {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+}
+
+.site-content {
+    margin-top: 2rem;
+    padding: 0.25rem 1%;
+    min-height: calc(100vh - 2rem);
+}
+
+.content-container {
+    width: 100%;
+    padding: 0;
+}
+
+.wrapper {
+    background-color: var(--content-bg-color);
+    padding: 0.25rem;
+    border-radius: 2px;
+    margin-bottom: 0.25rem;
+}
+
+.section {
+    margin-bottom: 0.25rem;
+}
+
+.section-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.15rem;
+    color: white;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.1rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 3px;
+    margin-bottom: 0.5rem;
+}
+
+.card {
+    background-color: var(--card-bg-color);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-thumb {
+    position: relative;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    overflow: hidden;
+}
+
+.card-thumb img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-title {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-meta {
+    font-size: 0.6rem;
+    padding: 0 4px 2px 4px;
+    color: #aaa;
+}
+
+.comments {
+    margin-top: 0.5rem;
+}
+
+.comment {
+    display: flex;
+    padding: 0.15rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comment-user {
+    margin-right: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.comment-user img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-bottom: 0.1rem;
+}
+
+.comment-user-name {
+    font-size: 0.6rem;
+    color: #aaa;
+    text-align: center;
+}
+
+.comment-content {
+    flex-grow: 1;
+    font-size: 0.7rem;
+}
+
+.comment-map {
+    font-size: 0.6rem;
+    color: #777;
+    margin-bottom: 0.1rem;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.25rem;
+}
+
+.tab {
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+    border-radius: 2px 2px 0 0;
+}
+
+.tab.active {
+    background-color: var(--alt-bg-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.15rem 0.25rem;
+}
+
+th {
+    background-color: var(--alt-bg-color-2);
+}
+
+tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.stars {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    margin-right: 0.25rem;
+}
+
+.star {
+    color: #444;
+}
+
+.star.full, .star.half {
+    color: var(--secondary-color);
+}
+
+.mode-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    padding: 0 0.15rem;
+    border-radius: 2px;
+    margin-right: 0.15rem;
+}
+
+.mode-0 {
+    background-color: #ff66aa;
+    color: black;
+}
+
+.mode-1 {
+    background-color: #ffcc22;
+    color: black;
+}
+
+.mode-2 {
+    background-color: #88ff88;
+    color: black;
+}
+
+.mode-3 {
+    background-color: #8866ff;
+    color: white;
+}
+
+.user-profile {
+    display: flex;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.user-avatar img {
+    width: 64px;
+    height: 64px;
+    margin-right: 0.5rem;
+}
+
+.user-details h1 {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.user-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.7rem;
+}
+
+.user-stats-label {
+    color: #aaa;
+    margin-right: 0.25rem;
+}
+
+.flash {
+    padding: 0.15rem 0.25rem;
+    margin-bottom: 0.25rem;
+    border-radius: 2px;
+    font-size: 0.7rem;
+}
+
+.info {
+    background-color: #2d4263;
+    color: white;
+}
+
+.success {
+    background-color: #2d6344;
+    color: white;
+}
+
+.error {
+    background-color: #63332d;
+    color: white;
+}
+
+footer {
+    text-align: center;
+    padding: 0.3rem 0;
+    margin-top: 0.5rem;
+    color: grey;
+    font-size: 0.65rem;
+}
+
+@media (min-width: 768px) {
+    .site-content {
+        padding: 0.25rem 5%;
+    }
+}
+
+@media (min-width: 1200px) {
+    .site-content {
+        padding: 0.25rem 10%;
+    }
+}
+
+.welcome-banner {
+    font-size: 0.7rem;
+    padding: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.no-results {
+    padding: 0.5rem;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+}
