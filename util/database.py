@@ -70,7 +70,7 @@ def get_beatmaps_by_set_id(set_id: int) -> List[Dict]:
 def search_beatmaps(search_term: str, limit: int = 20) -> List[Dict]:
     query = """
         SELECT * FROM beatmaps 
-        WHERE MATCH(Artist, Title, DifficultyName) AGAINST(%s IN NATURAL LANGUAGE MODE)
+        WHERE MATCH(Artist, Title, DifficultyName) AGAINST(%s IN BOOLEAN MODE)
         LIMIT %s
     """
     return execute_query(query, (search_term, limit), fetch_all=True) or []
@@ -116,7 +116,6 @@ def update_user_tokens(user_id: int, access_token: str, refresh_token: str) -> b
     return True
 
 def get_user_ratings(user_id: int) -> List[Dict]:
-    # Note: Ensure column names match exactly with the database schema
     query = """
         SELECT r.*, b.Artist, b.Title, b.DifficultyName 
         FROM ratings r
