@@ -24,16 +24,23 @@ def index():
         recent_maps[mode] = mode_maps
    
     query = """
-        SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID, 
-        COUNT(r.Score) as RatingCount, AVG(r.Score) as AvgRating,
-        (SUM(r.Score) + 3.0 * 10) / (COUNT(r.Score) + 10) as BayesianAvg
-        FROM ratings r
-        JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
-        JOIN beatmapsets bs ON b.SetID = bs.SetID
-        GROUP BY b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID
-        HAVING RatingCount >= 5
-        ORDER BY BayesianAvg DESC
-        LIMIT 10
+            SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID,
+            COUNT(r.Score) as RatingCount,
+            AVG(r.Score) as AvgRating,
+            CASE 
+                WHEN COUNT(r.Score) < 20 THEN 
+                    2.9 + POWER((GREATEST(1, LEAST(COUNT(r.Score), 20)) - 1) / 19.0, 3) * 
+                    ((COUNT(r.Score) * AVG(r.Score) + 3.0 * 20) / (COUNT(r.Score) + 20) - 2.9)
+                ELSE 
+                    (COUNT(r.Score) * AVG(r.Score) + 3.0 * 20) / (COUNT(r.Score) + 20)
+            END as BayesianAvg
+            FROM ratings r
+            JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
+            JOIN beatmapsets bs ON b.SetID = bs.SetID
+            GROUP BY b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID
+            HAVING RatingCount >= 5
+            ORDER BY BayesianAvg DESC
+            LIMIT 10
     """
     top_maps = execute_query(query, fetch_all=True) or []
     for map_data in top_maps:
