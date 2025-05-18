@@ -21,7 +21,7 @@
             {% for result in results %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('beatmapset', set_id=result.SetID) }}">
+                        <a href="{{ url_for('beatmaps.beatmapset', set_id=result.SetID) }}">
                             {{ result.Artist }} - {{ result.Title }}
                         </a>
                     </td>

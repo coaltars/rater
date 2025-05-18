@@ -13,7 +13,7 @@
 <div class="tab-content active" data-mode="0">
     <div class="grid">
         {% for map in recent_maps[0] %}
-            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+            <a href="{{ url_for('beatmaps.beatmapset', set_id=map.SetID) }}" class="card">
                 <div class="card-thumb">
                     <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
                 </div>
@@ -30,7 +30,7 @@
 <div class="tab-content" data-mode="1" style="display: none;">
     <div class="grid">
         {% for map in recent_maps[1] %}
-            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+            <a href="{{ url_for('beatmaps.beatmapset', set_id=map.SetID) }}" class="card">
                 <div class="card-thumb">
                     <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
                 </div>
@@ -47,7 +47,7 @@
 <div class="tab-content" data-mode="2" style="display: none;">
     <div class="grid">
         {% for map in recent_maps[2] %}
-            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+            <a href="{{ url_for('beatmaps.beatmapset', set_id=map.SetID) }}" class="card">
                 <div class="card-thumb">
                     <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
                 </div>
@@ -64,7 +64,7 @@
 <div class="tab-content" data-mode="3" style="display: none;">
     <div class="grid">
         {% for map in recent_maps[3] %}
-            <a href="{{ url_for('beatmapset', set_id=map.SetID) }}" class="card">
+            <a href="{{ url_for('beatmaps.beatmapset', set_id=map.SetID) }}" class="card">
                 <div class="card-thumb">
                     <img src="https://assets.ppy.sh/beatmaps/{{ map.SetID }}/covers/card.jpg" alt="{{ map.Metadata }}">
                 </div>
@@ -92,7 +92,7 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>
-                    <a href="{{ url_for('beatmapset', set_id=map.SetID) }}">
+                    <a href="{{ url_for('beatmaps.beatmapset', set_id=map.SetID) }}">
                         {{ map.Artist }} - {{ map.Title }}
                     </a>
                 </td>
