@@ -41,7 +41,7 @@ def callback():
         'avatar_url': user_data['avatar_url']
     }
 
-    save_user_to_db(user_data, access_token, refresh_token)
+    save_user_to_db(user_data)
     flash('Login successful', 'success')
     return redirect(url_for('main.index'))
 
