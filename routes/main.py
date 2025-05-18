@@ -2,19 +2,19 @@ from flask import Blueprint, render_template, session, request
 from util.database import execute_query
 from util.constants import MODE_NAMES
 
-main_bp = Blueprint('main', __name__)
+main_bp = Blueprint('main', __name__)  # Fixed the double asterisks
 
 @main_bp.route('/')
 def index():
     recent_maps = {}
     for mode in range(4):
         query = """
-            SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID, b.Timestamp
+            SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID, MAX(b.Timestamp) as Timestamp
             FROM beatmaps b
             JOIN beatmapsets bs ON b.SetID = bs.SetID
             WHERE b.Mode = %s AND b.Status > 0
-            GROUP BY b.SetID
-            ORDER BY b.Timestamp DESC
+            GROUP BY bs.SetID, bs.Artist, bs.Title, bs.CreatorID
+            ORDER BY MAX(b.Timestamp) DESC
             LIMIT 8
         """
         mode_maps = execute_query(query, (mode,), fetch_all=True) or []
@@ -22,7 +22,7 @@ def index():
             map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']}"
            
         recent_maps[mode] = mode_maps
-    
+   
     query = """
         SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID,
                AVG(r.Score) as AvgRating, COUNT(r.Score) as RatingCount
@@ -69,14 +69,14 @@ def search():
                               results=None,
                               query=query_string,
                               user=session.get('user', None))
-    
+   
     query = """
         SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID,
-               (SELECT COUNT(DISTINCT r.UserID) FROM ratings r 
-                JOIN beatmaps bm ON r.BeatmapID = bm.BeatmapID 
+               (SELECT COUNT(DISTINCT r.UserID) FROM ratings r
+                JOIN beatmaps bm ON r.BeatmapID = bm.BeatmapID
                 WHERE bm.SetID = bs.SetID) as RatingCount,
-               (SELECT AVG(r.Score) FROM ratings r 
-                JOIN beatmaps bm ON r.BeatmapID = bm.BeatmapID 
+               (SELECT AVG(r.Score) FROM ratings r
+                JOIN beatmaps bm ON r.BeatmapID = bm.BeatmapID
                 WHERE bm.SetID = bs.SetID) as AvgRating,
                MAX(b.DateRanked) as DateRanked
         FROM beatmaps b
