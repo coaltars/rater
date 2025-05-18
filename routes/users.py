@@ -15,9 +15,11 @@ def user_profile(user_id):
 
     query = """
         SELECT r.BeatmapID, r.Score as Rating, r.date as Timestamp,
-               b.SetID, b.DifficultyName, b.Mode, b.Artist, b.Title, b.SetCreatorID as CreatorID
+               b.SetID, b.DifficultyName, b.Mode,
+               bs.Artist, bs.Title, bs.CreatorID
         FROM ratings r
         JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
         WHERE r.UserID = %s
         ORDER BY r.date DESC
         LIMIT 50

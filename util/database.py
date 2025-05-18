@@ -54,32 +54,41 @@ def execute_query(query: str, params: Union[tuple, dict] = None, fetch_all: bool
 
 def get_beatmap(beatmap_id: int) -> Optional[Dict]:
     query = """
-        SELECT * FROM beatmaps 
-        WHERE BeatmapID = %s
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        WHERE b.BeatmapID = %s
     """
     return execute_query(query, (beatmap_id,), fetch_one=True)
 
 def get_beatmaps_by_set_id(set_id: int) -> List[Dict]:
     query = """
-        SELECT * FROM beatmaps 
-        WHERE SetID = %s
-        ORDER BY SR ASC
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        WHERE b.SetID = %s
+        ORDER BY b.SR ASC
     """
     return execute_query(query, (set_id,), fetch_all=True) or []
 
 def search_beatmaps(search_term: str, limit: int = 20) -> List[Dict]:
     query = """
-        SELECT * FROM beatmaps 
-        WHERE MATCH(Artist, Title, DifficultyName) AGAINST(%s IN BOOLEAN MODE)
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        WHERE MATCH(bs.Artist, bs.Title) AGAINST(%s IN BOOLEAN MODE)
+        OR MATCH(b.DifficultyName) AGAINST(%s IN BOOLEAN MODE)
         LIMIT %s
     """
-    return execute_query(query, (search_term, limit), fetch_all=True) or []
+    return execute_query(query, (search_term, search_term, limit), fetch_all=True) or []
 
 def get_top_rated_beatmaps(limit: int = 50) -> List[Dict]:
     query = """
-        SELECT * FROM beatmaps 
-        WHERE WeightedAvg IS NOT NULL
-        ORDER BY WeightedAvg DESC
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        WHERE b.WeightedAvg IS NOT NULL
+        ORDER BY b.WeightedAvg DESC
         LIMIT %s
     """
     return execute_query(query, (limit,), fetch_all=True) or []
@@ -117,9 +126,10 @@ def update_user_tokens(user_id: int, access_token: str, refresh_token: str) -> b
 
 def get_user_ratings(user_id: int) -> List[Dict]:
     query = """
-        SELECT r.*, b.Artist, b.Title, b.DifficultyName 
+        SELECT r.*, b.DifficultyName, bs.Artist, bs.Title
         FROM ratings r
         JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
         WHERE r.UserID = %s
         ORDER BY r.date DESC
     """
@@ -137,7 +147,9 @@ def get_beatmap_ratings(beatmap_id: int) -> List[Dict]:
 
 def get_recently_rated_beatmaps(limit: int = 50) -> List[Dict]:
     query = """
-        SELECT b.* FROM beatmaps b
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID 
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
         JOIN ratings r ON b.BeatmapID = r.BeatmapID
         GROUP BY b.BeatmapID
         ORDER BY MAX(r.date) DESC
@@ -147,13 +159,14 @@ def get_recently_rated_beatmaps(limit: int = 50) -> List[Dict]:
 
 def get_top_mappers(limit: int = 10) -> List[Dict]:
     query = """
-        SELECT b.CreatorID, m.Username, 
+        SELECT bs.CreatorID, m.Username, 
             COUNT(DISTINCT b.BeatmapID) as MapCount, 
             AVG(b.WeightedAvg) as AverageRating
         FROM beatmaps b
-        JOIN mappernames m ON b.CreatorID = m.UserID
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        JOIN mappernames m ON bs.CreatorID = m.UserID
         WHERE b.WeightedAvg IS NOT NULL
-        GROUP BY b.CreatorID
+        GROUP BY bs.CreatorID
         HAVING MapCount >= 3
         ORDER BY AverageRating DESC
         LIMIT %s
@@ -261,11 +274,13 @@ def get_mapper_by_name(username: str) -> Optional[Dict]:
 
 def get_beatmaps_by_mapper(user_id: int) -> List[Dict]:
     query = """
-        SELECT * FROM beatmaps 
-        WHERE CreatorID = %s OR SetCreatorID = %s
-        ORDER BY DateRanked DESC
+        SELECT b.*, bs.Artist, bs.Title, bs.CreatorID
+        FROM beatmaps b
+        JOIN beatmapsets bs ON b.SetID = bs.SetID
+        WHERE bs.CreatorID = %s
+        ORDER BY b.DateRanked DESC
     """
-    return execute_query(query, (user_id, user_id), fetch_all=True) or []
+    return execute_query(query, (user_id,), fetch_all=True) or []
 
 def get_most_active_raters(limit: int = 10) -> List[Dict]:
     query = """
