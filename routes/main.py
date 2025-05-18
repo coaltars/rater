@@ -9,32 +9,37 @@ def index():
     recent_maps = {}
     for mode in range(4):
         query = """
-            SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID, MAX(b.Timestamp) as Timestamp
+            SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, 
+                   bs.CreatorID, b.Timestamp
             FROM beatmaps b
             JOIN beatmapsets bs ON b.SetID = bs.SetID
             WHERE b.Mode = %s AND b.Status > 0
-            GROUP BY bs.SetID, bs.Artist, bs.Title, bs.CreatorID
-            ORDER BY MAX(b.Timestamp) DESC
+            ORDER BY b.Timestamp DESC
             LIMIT 8
         """
         mode_maps = execute_query(query, (mode,), fetch_all=True) or []
         for map_data in mode_maps:
-            map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']}"
+            map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']} [{map_data['DifficultyName']}]"
            
         recent_maps[mode] = mode_maps
    
     query = """
-        SELECT bs.SetID, bs.Artist, bs.Title, bs.CreatorID,
-               AVG(r.Score) as AvgRating, COUNT(r.Score) as RatingCount
+        SELECT b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID,
+               COUNT(r.Score) as RatingCount,
+               AVG(r.Score) as AvgRating,
+               (SUM(r.Score) / COUNT(r.Score)) * (COUNT(r.Score) / (COUNT(r.Score) + 10)) +
+               (3.0 * (10 / (COUNT(r.Score) + 10))) as WeightedAvg
         FROM ratings r
         JOIN beatmaps b ON r.BeatmapID = b.BeatmapID
         JOIN beatmapsets bs ON b.SetID = bs.SetID
-        GROUP BY bs.SetID, bs.Artist, bs.Title, bs.CreatorID
+        GROUP BY b.BeatmapID, b.SetID, bs.Artist, bs.Title, b.DifficultyName, bs.CreatorID
         HAVING RatingCount >= 5
-        ORDER BY AvgRating DESC
+        ORDER BY WeightedAvg DESC
         LIMIT 10
     """
     top_maps = execute_query(query, fetch_all=True) or []
+    for map_data in top_maps:
+        map_data['Metadata'] = f"{map_data['Artist']} - {map_data['Title']} [{map_data['DifficultyName']}]"
    
     return render_template('index.html',
                           recent_maps=recent_maps,
