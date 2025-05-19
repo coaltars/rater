@@ -217,7 +217,7 @@ def update_ratings() -> None:
             set_id_result = cursor.fetchone()
             if set_id_result:
                 set_id = set_id_result[0]
-                
+
                 cursor.execute("""
                     REPLACE INTO top_maps (BeatmapID, SetID, Mode, WeightedAvg, RatingCount, LastUpdated)
                     VALUES (%s, %s, %s, %s, %s, NOW())
@@ -278,16 +278,16 @@ def update_ratings() -> None:
     """, (current_year, current_year))
     cnx.commit()
     
-    update_home_caches(cursor, cnx)
+    update_home_cache(cursor, cnx)
     cursor.close()
     cnx.close()
 
 def update_home_cache(cursor, cnx):
-    cursor.execute("TRUNCATE TABLE recent_maps")
+    cursor.execute("TRUNCATE TABLE cache_home_recent_maps")
     
     for mode in range(4):
         cursor.execute("""
-            INSERT INTO recent_maps (SetID, Timestamp, Metadata, CreatorID, Mode)
+            INSERT INTO cache_home_recent_maps (SetID, Timestamp, Metadata, CreatorID, Mode)
             SELECT bs.SetID, rm.Timestamp, CONCAT(bs.Artist, ' - ', bs.Title) as Metadata, 
                    bs.CreatorID, rm.Mode
             FROM recent_maps rm
