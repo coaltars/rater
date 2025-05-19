@@ -282,25 +282,12 @@ def update_ratings() -> None:
     cursor.close()
     cnx.close()
 
-def update_home_caches(cursor, cnx):
-    cursor.execute("TRUNCATE TABLE cache_home_best_map")
-    
-    for mode in range(4):  # 0=osu, 1=taiko, 2=fruits, 3=mania
-        cursor.execute("""
-            INSERT INTO cache_home_best_map (BeatmapID, Mode)
-            SELECT BeatmapID, Mode
-            FROM top_maps 
-            WHERE Mode = %s
-            ORDER BY WeightedAvg DESC, RatingCount DESC
-            LIMIT 1
-        """, (mode,))
-    cnx.commit()
-    
-    cursor.execute("TRUNCATE TABLE cache_home_recent_maps")
+def update_home_cache(cursor, cnx):
+    cursor.execute("TRUNCATE TABLE recent_maps")
     
     for mode in range(4):
         cursor.execute("""
-            INSERT INTO cache_home_recent_maps (SetID, Timestamp, Metadata, CreatorID, Mode)
+            INSERT INTO recent_maps (SetID, Timestamp, Metadata, CreatorID, Mode)
             SELECT bs.SetID, rm.Timestamp, CONCAT(bs.Artist, ' - ', bs.Title) as Metadata, 
                    bs.CreatorID, rm.Mode
             FROM recent_maps rm
